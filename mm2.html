@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM2 CIS Leaderboard — Quantum Core</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #020408;
+            --panel-bg: rgba(8, 12, 22, 0.88);
+            --neon-pink: #d946ef;
+            --neon-cyan: #38bdf8;
+            --neon-purple: #8b5cf6;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+        }
+
+        body.theme-emerald {
+            --neon-pink: #10b981;
+            --neon-cyan: #34d399;
+            --neon-purple: #059669;
+        }
+
+        body.theme-sunset {
+            --neon-pink: #f43f5e;
+            --neon-cyan: #fb923c;
+            --neon-purple: #e11d48;
+        }
+
+        body.theme-deepspace {
+            --neon-pink: #a855f7;
+            --neon-cyan: #6366f1;
+            --neon-purple: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 30px 15px;
+            position: relative;
+            overflow-x: hidden;
+            transition: background-color 0.4s ease;
+        }
+
+        #quantumCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2rem, 5vw, 2.8rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--text-main) 20%, var(--neon-cyan) 60%, var(--neon-pink) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px rgba(56, 189, 248, 0.4));
+            margin-bottom: 10px;
+        }
+
+        .sub-header-info {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .badge-live {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            background: rgba(56, 189, 248, 0.08);
+            color: var(--neon-cyan);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 6px 12px;
+            border-radius: 6px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            backdrop-filter: blur(5px);
+            transition: color 0.3s, border-color 0.3s;
+        }
+
+        .badge-live::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--neon-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--neon-cyan);
+            animation: pulse 1.5s infinite;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .controls-panel {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .theme-btn, .lang-btn {
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: 0.2s;
+            text-transform: uppercase;
+            backdrop-filter: blur(5px);
+        }
+
+        .theme-btn:hover, .theme-btn.active-theme,
+        .lang-btn:hover, .lang-btn.active-lang {
+            border-color: var(--neon-cyan);
+            color: var(--text-main);
+            background: rgba(56, 189, 248, 0.15);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+
+        .filter-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            backdrop-filter: blur(5px);
+        }
+
+        .tab-btn:hover, .tab-btn.active {
+            background: var(--neon-cyan);
+            color: var(--bg-base);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .hud-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            flex-wrap: wrap;
+        }
+
+        .hud-group {
+            flex: 1;
+            min-width: 130px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .hud-group label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .hud-group input {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: 11px 14px;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            outline: none;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        .hud-group input:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+
+        .action-btn {
+            background: var(--neon-cyan);
+            color: var(--bg-base);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            border: none;
+            border-radius: 8px;
+            padding: 0 22px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            transition: 0.2s;
+            height: 44px;
+            align-self: flex-end;
+            width: 100%;
+        }
+
+        @media (min-width: 600px) {
+            .action-btn {
+                width: auto;
+            }
+        }
+
+        .action-btn:hover {
+            background: #fff;
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
+        }
+
+        .players-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .players-grid::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .players-grid::-webkit-scrollbar-thumb {
+            background: var(--neon-purple);
+            border-radius: 3px;
+        }
+
+        .player-card {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 12px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .player-card:active {
+            transform: scale(0.98);
+        }
+
+        .player-card:hover {
+            background: rgba(15, 23, 42, 0.95);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.25);
+        }
+
+        .player-main-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .rank-box {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 900;
+            width: 45px;
+            color: var(--text-muted);
+        }
+
+        .player-card.top-1 .rank-box { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.5); }
+        .player-card.top-2 .rank-box { color: #cbd5e1; }
+        .player-card.top-3 .rank-box { color: #f97316; }
+
+        .nickname {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--text-main);
+        }
+
+        .player-card.top-1 .nickname { color: #fde047; }
+
+        .tier-badge {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            padding: 5px 10px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 4, 8, 0);
+            backdrop-filter: blur(0px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+            pointer-events: none;
+            transition: background 0.3s ease, backdrop-filter 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            background: rgba(2, 4, 8, 0.8);
+            backdrop-filter: blur(8px);
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 16px;
+            width: 100%;
+            max-width: 380px;
+            padding: 25px;
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.3);
+            text-align: center;
+            transform: scale(0.8) translateY(20px);
+            opacity: 0;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        .modal-card h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4rem;
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+
+        .modal-stats {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .social-link-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            transition: 0.2s;
+            text-transform: uppercase;
+        }
+
+        .social-link-btn:hover {
+            border-color: var(--neon-cyan);
+            background: rgba(56, 189, 248, 0.1);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+        }
+
+        .close-modal {
+            background: var(--neon-cyan);
+            color: var(--bg-base);
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            width: 100%;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.2s;
+        }
+
+        .close-modal:hover {
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+        }
+
+        .modal-rank-info {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            color: var(--neon-cyan);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 15px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="quantumCanvas"></canvas>
+
+    <div class="wrapper">
+        <header>
+            <h1>MM2 CIS Leaderboard</h1>
+            <div class="sub-header-info">
+                <div class="badge-live" id="lblSync">Сезон 2026</div>
+                <div class="badge-live" style="color: var(--neon-pink); border-color: rgba(217, 70, 239, 0.3);" id="lblElite">Топ 100 Элита</div>
+            </div>
+        </header>
+
+        <div class="controls-panel">
+            <!-- Переключатель языка -->
+            <div class="control-group">
+                <button class="lang-btn active-lang" onclick="setLang('ru', this)">RU</button>
+                <button class="lang-btn" onclick="setLang('en', this)">EN</button>
+            </div>
+            <!-- Переключатель тем -->
+            <div class="control-group">
+                <button class="theme-btn active-theme" onclick="setTheme('', this)" data-ru="Неоновый синий" data-en="Neon Blue">Неоновый синий</button>
+                <button class="theme-btn" onclick="setTheme('theme-emerald', this)" data-ru="Изумрудный квант" data-en="Emerald Quantum">Изумрудный квант</button>
+                <button class="theme-btn" onclick="setTheme('theme-sunset', this)" data-ru="Неоновый закат" data-en="Neon Sunset">Неоновый закат</button>
+                <button class="theme-btn" onclick="setTheme('theme-deepspace', this)" data-ru="Глубокий космос" data-en="Deep Space">Глубокий космос</button>
+            </div>
+        </div>
+
+        <div class="filter-tabs">
+            <button class="tab-btn active" onclick="setFilter('all', this)" data-ru="Все" data-en="All">Все</button>
+            <button class="tab-btn" onclick="setFilter('top10', this)" data-ru="Топ 10" data-en="Top 10">Топ 10</button>
+            <button class="tab-btn" onclick="setFilter('legends', this)" data-ru="Легенды" data-en="Legends">Легенды</button>
+        </div>
+
+        <div class="hud-panel">
+            <div class="hud-group">
+                <label for="searchRank" id="lblRankSearch">Место</label>
+                <input type="number" id="searchRank" placeholder="1-100" min="1" max="100">
+            </div>
+            <div class="hud-group">
+                <label for="searchName" id="lblNameSearch">Никнейм</label>
+                <input type="text" id="searchName" placeholder="Поиск ник...">
+            </div>
+            <button class="action-btn" onclick="applySearch()" id="btnSearch">Найти</button>
+        </div>
+
+        <div class="players-grid" id="playersContainer"></div>
+    </div>
+
+    <div class="modal-overlay" id="profileModal" onclick="closeProfile(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <h2 id="modalName">Player_Name</h2>
+            <div class="modal-rank-info" id="modalRankBadge">Rank #1</div>
+            <div class="modal-stats">
+                <a id="modalRoblox" href="#" target="_blank" class="social-link-btn" data-ru="🎮 Профиль Roblox" data-en="🎮 Roblox Profile">🎮 Профиль Roblox</a>
+                <a id="modalTiktok" href="#" target="_blank" class="social-link-btn" data-ru="📱 TikTok аккаунт" data-en="📱 TikTok Account">📱 TikTok аккаунт</a>
+            </div>
+            <button class="close-modal" onclick="closeProfileBtn()" id="btnClose" data-ru="Закрыть" data-en="Close">Закрыть</button>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'ru';
+
+        const translations = {
+            ru: {
+                sync: "Сезон 2026",
+                elite: "Топ 100 Элита",
+                rankSearch: "Место",
+                nameSearch: "Никнейм",
+                namePlaceholder: "Поиск ник...",
+                searchBtn: "Найти",
+                closeBtn: "Закрыть",
+                robloxBtn: "🎮 Профиль Roblox",
+                tiktokBtn: "📱 TikTok аккаунт",
+                noResults: "❌ Игроки не найдены"
+            },
+            en: {
+                sync: "Season 2026",
+                elite: "Top 100 Elite",
+                rankSearch: "Rank",
+                nameSearch: "Nickname",
+                namePlaceholder: "Search nickname...",
+                searchBtn: "Search",
+                closeBtn: "Close",
+                robloxBtn: "🎮 Roblox Profile",
+                tiktokBtn: "📱 TikTok Account",
+                noResults: "❌ Players not found"
+            }
+        };
+
+        function setLang(lang, btn) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active-lang'));
+            btn.classList.add('active-lang');
+
+            document.getElementById('lblSync').innerText = translations[lang].sync;
+            document.getElementById('lblElite').innerText = translations[lang].elite;
+            document.getElementById('lblRankSearch').innerText = translations[lang].rankSearch;
+            document.getElementById('lblNameSearch').innerText = translations[lang].nameSearch;
+            document.getElementById('searchName').placeholder = translations[lang].namePlaceholder;
+            document.getElementById('btnSearch').innerText = translations[lang].searchBtn;
+            document.getElementById('btnClose').innerText = translations[lang].closeBtn;
+
+            document.querySelectorAll('.theme-btn').forEach(b => {
+                b.innerText = b.getAttribute(`data-${lang}`);
+            });
+
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.innerText = b.getAttribute(`data-${lang}`);
+            });
+
+            document.getElementById('modalRoblox').innerText = translations[lang].robloxBtn;
+            document.getElementById('modalTiktok').innerText = translations[lang].tiktokBtn;
+
+            applySearch();
+        }
+
+        function setTheme(themeName, btn) {
+            document.body.className = themeName;
+            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active-theme'));
+            btn.classList.add('active-theme');
+        }
+
+        const canvas = document.getElementById('quantumCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        const particles = [];
+        const particleCount = Math.min(Math.floor((window.innerWidth * window.innerHeight) / 12000), 70);
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: (Math.random() - 0.5) * 0.8,
+                vy: (Math.random() - 0.5) * 0.8,
+                radius: Math.random() * 2 + 1
+            });
+        }
+
+        function drawQuantumField() {
+            ctx.clearRect(0, 0, width, height);
+
+            const computedStyle = getComputedStyle(document.body);
+            const particleColor = computedStyle.getPropertyValue('--neon-cyan').trim() || '#38bdf8';
+
+            ctx.fillStyle = particleColor;
+            ctx.strokeStyle = particleColor;
+
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > width) p.vx *= -1;
+                if (p.y < 0 || p.y > height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.globalAlpha = 0.6;
+                ctx.fill();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    let p2 = particles[j];
+                    let dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.globalAlpha = (1 - (dist / 120)) * 0.2;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(drawQuantumField);
+        }
+
+        drawQuantumField();
+
+        const database = [
+            { rank: 1, name: "yktunaa", tier: "Grandmaster", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" },
+            { rank: 2, name: "brother09_07", tier: "Master", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" },
+            { rank: 3, name: "quittingFire", tier: "Master", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" },
+            { rank: 4, name: "goxilpert_1111", tier: "Diamond", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" },
+            { rank: 5, name: "jffhhhy", tier: "Diamond", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" },
+            { rank: 6, name: "LonelyCetyVel", tier: "Platinum", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" },
+            { rank: 7, name: "emo7294", tier: "Platinum", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" },
+            { rank: 8, name: "BobixxzWd", tier: "Platinum", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" },
+            { rank: 9, name: "dodoru232", tier: "Gold", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" },
+            { rank: 10, name: "VolkaT_433", tier: "Gold", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" },
+            { rank: 11, name: "N1NA_POPA4", tier: "Gold", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" },
+            { rank: 12, name: "fr0m1ix", tier: "Silver", roblox: "https://www.roblox.com", tiktok: "https://www.tiktok.com" }
+        ];
+
+        for (let i = 13; i <= 100; i++) {
+            database.push({ 
+                rank: i, 
+                name: "test", 
+                tier: i <= 30 ? "Gold" : "Silver",
+                roblox: "https://www.roblox.com",
+                tiktok: "https://www.tiktok.com"
+            });
+        }
+
+        let currentFilter = 'all';
+
+        function renderList(data) {
+            const container = document.getElementById('playersContainer');
+            container.innerHTML = '';
+
+            if (data.length === 0) {
+                container.innerHTML = `<div class="no-results">${translations[currentLang].noResults}</div>`;
+                return;
+            }
+
+            data.forEach(player => {
+                const card = document.createElement('div');
+                card.className = `player-card top-${player.rank}`;
+                card.onclick = () => openProfile(player);
+
+                let rankMark = `#${player.rank}`;
+                if (player.rank === 1) rankMark = '👑 1';
+                else if (player.rank === 2) rankMark = '🥈 2';
+                else if (player.rank === 3) rankMark = '🥉 3';
+
+                card.innerHTML = `
+                    <div class="player-main-info">
+                        <div class="rank-box">${rankMark}</div>
+                        <div class="nickname">${player.name}</div>
+                    </div>
+                    <div class="card-right">
+                        <div class="tier-badge">${player.tier}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function setFilter(type, btnElement) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+            currentFilter = type;
+            applySearch();
+        }
+
+        function applySearch() {
+            const rankVal = document.getElementById('searchRank').value.trim();
+            const nameVal = document.getElementById('searchName').value.trim().toLowerCase();
+
+            let result = database;
+
+            if (currentFilter === 'top10') {
+                result = result.filter(p => p.rank <= 10);
+            } else if (currentFilter === 'legends') {
+                result = result.filter(p => p.rank <= 3);
+            }
+
+            if (rankVal !== '') {
+                result = result.filter(p => p.rank.toString() === rankVal);
+            }
+
+            if (nameVal !== '') {
+                result = result.filter(p => p.name.toLowerCase().includes(nameVal));
+            }
+
+            renderList(result);
+        }
+
+        function openProfile(player) {
+            document.getElementById('modalName').innerText = player.name;
+            document.getElementById('modalRankBadge').innerText = `${currentLang === 'ru' ? 'Ранг' : 'Rank'} #${player.rank} • ${player.tier}`;
+            document.getElementById('modalRoblox').href = player.roblox;
+            document.getElementById('modalTiktok').href = player.tiktok;
+            
+            const modal = document.getElementById('profileModal');
+            modal.classList.add('active');
+        }
+
+        function closeProfile(e) {
+            if (e.target.id === 'profileModal') {
+                document.getElementById('profileModal').classList.remove('active');
+            }
+        }
+
+        function closeProfileBtn() {
+            document.getElementById('profileModal').classList.remove('active');
+        }
+
+        renderList(database);
+    </script>
+</body>
+</html>
